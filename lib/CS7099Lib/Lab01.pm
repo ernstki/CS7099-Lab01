@@ -13,25 +13,24 @@ use autodie;
 
 package CS7099Lib::Lab01;
 require Exporter;
-use vars qw(@ISA @EXPORT @EXPORT_OK);
+use vars qw( @ISA %EXPORT_TAGS );
 
 @ISA = qw(Exporter);
-@EXPORT = qw(
-    &read_fasta
-    &find_start_codons
-    &find_orfs
-    &find_longest_orf
-    &get_codon_at
-    &get_seq_range
-    &get_seq_of_length
-    &gc_content_of_range
-    &gc_content_of_seq
+
+%EXPORT_TAGS = (
+    functions => [qw( read_fasta find_start_codons find_orfs get_codon_at
+                      get_seq_range get_seq_of_length gc_content_of_range )],
+
+    constants => [qw( @START_CODONS @STOP_CODONS
+                      $CODON_SIZE $SEQ_LENGTH $MIN_GENE_LENGTH
+                      $MIN_GC_CONTENT )],
+                      
+    internals => [qw( $INPUT_SEQ substring_match find_longest_orf
+                      gc_content_of_seq )],
 );
-@EXPORT_OK = qw(
-    &substring_match
-    @START_CODONS @STOP_CODONS
-    $INPUT_SEQ $CODON_SIZE $SEQ_LENGTH $MIN_GENE_LENGTH
-);
+
+Exporter::export_tags('functions');
+Exporter::export_ok_tags('constants', 'internals');
 
 use Carp;
 use Data::Dump qw( dd dump );         # For debugging statements
@@ -39,7 +38,7 @@ use English;                          # English names for magic variables
 
 use vars qw(
     @START_CODONS @STOP_CODONS $INPUT_SEQ $CODON_SIZE $SEQ_LENGTH
-    $MIN_GENE_LENGTH
+    $MIN_GENE_LENGTH $MIN_GC_CONTENT
 ); 
 
 #
@@ -54,6 +53,7 @@ $INPUT_SEQ       = 'mtDNA_1-16569.fasta';
 $CODON_SIZE      = 3;
 $SEQ_LENGTH      = 0;      # updated by _read_fasta(), below
 $MIN_GENE_LENGTH = 60;     # FIXME: allow as command-line option
+$MIN_GC_CONTENT  = 35;     # %GC (FIXME: allow as command-line option)
 
 
 #
@@ -71,6 +71,9 @@ sub get_seq_of_length( $$$;$ );
 sub gc_content_of_range( $$$ );
 sub gc_content_of_seq( $$$ );
 
+#
+#                          S U B R O U T I N E S
+#                          =====================
 
 # Public (zero-argument) version of _read_fasta() which calls the "real"
 # function with a hard-coded input filename.
@@ -113,7 +116,7 @@ sub find_start_codons( $ ) {
     # FIXME: Also scan in reverse direction.
     for (my $frame = 0; $frame < $CODON_SIZE; $frame++) {
         #print "Reading frame $frame\n";
-        $starts->[$frame] = [];
+        #$starts->[$frame] = [];
 
         for ( $pos = $frame; $pos < $SEQ_LENGTH; $pos += $CODON_SIZE ) {
 
@@ -127,9 +130,9 @@ sub find_start_codons( $ ) {
             foreach my $start (@START_CODONS) {
 
                 if ( substring_match($seq, $start, $pos) ) {
-                    #print "FOUND\t$pos\t$codon\n";
                     #push @{$starts->[$frame]}, { $pos => $start };
-                    push @{$starts->[$frame]}, $pos;
+                    #push @{$starts->[$frame]}, $pos;
+                    push @{$starts}, $pos;
                 }
 
             } # for each possible start codon in @START_CODONS
@@ -138,7 +141,9 @@ sub find_start_codons( $ ) {
 
     } # for each reading frame (0 .. $CODON_SIZE - 1 offsets)
 
-    return $starts;
+    # Sort before returning, since they're in reading frame order up until
+    # now
+    return [ sort { $a <=> $b } @$starts ];
 
 } # find_start_codons
 
@@ -149,15 +154,17 @@ sub find_start_codons( $ ) {
 # can't be found before the end of the sequence).
 sub find_orfs( $$ ) {
     my ( $seq, $starts ) = @_;
-    my $orfs = [];
 
-    for ( my $fr = 0; $fr < $CODON_SIZE; $fr++ ) {
-        $orfs->[$fr] = {
-            map { $_ => find_longest_orf($seq, $_) } @{$starts->[$fr]}
-        };
-    }
+    #my $orfs = [];
+    #for ( my $fr = 0; $fr < $CODON_SIZE; $fr++ ) {
+    #    $orfs->[$fr] = {
+    #        map { $_ => find_longest_orf($seq, $_) } @{$starts->[$fr]}
+    #    };
+    #}
+    #return $orfs;
 
-    return $orfs;
+    return { map { $_ => find_longest_orf($seq, $_) } @{$starts} }
+
 } # find_orfs
 
 
@@ -231,7 +238,7 @@ sub get_seq_of_length( $$$;$ ) {
 
 
 # Return true if sequence $seq (an array of bases) contains substring $substr at
-# postition $pos
+# postition $pos. Print extra debugging output if $chatty is given as true.
 sub substring_match( $$$;$ ) {
     my ($seq, $substr, $pos, $chatty) = @_;
     print "Substring match called to match $substr @ pos $pos\n" if $chatty;
@@ -245,6 +252,23 @@ sub substring_match( $$$;$ ) {
 
 
 # Compute the % GC content (reported as a fraction) of the given range
+sub gc_content_of_range( $$$ ) {
+    my ($seq, $start, $end) = @_;
+    my $gs_or_cs = 0;
+
+    carp "Warning: Range not an even multiple of codon size"
+       unless ( ($end - $start + 1) % $CODON_SIZE == 0 );
+
+    for (my $pos = $start; $pos < $end + 1; $pos++) {
+        $gs_or_cs++ if @$seq[$pos] eq 'G' || @$seq[$pos] eq 'C';
+    }
+
+    return $gs_or_cs / ($end - $start + 1) * 100;
+
+} # gc_content_of_range
+
+
+#sub gc_content_of_seq( $$$ );
 
 
 # Source: http://perldoc.perl.org/perlform.html#Accessing-Formatting-Internals
