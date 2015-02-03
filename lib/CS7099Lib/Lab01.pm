@@ -10,6 +10,7 @@
 use strict;
 use warnings;
 use autodie;
+use Data::Dump qw( dd pp );
 
 package CS7099Lib::Lab01;
 require Exporter;
@@ -18,8 +19,9 @@ use vars qw( @ISA %EXPORT_TAGS );
 @ISA = qw(Exporter);
 
 %EXPORT_TAGS = (
-    functions => [qw( read_fasta find_start_codons find_orfs get_codon_at
-                      get_seq_range get_seq_of_length gc_content_of_range )],
+    functions => [qw( read_fasta complement_seq find_start_codons find_orfs
+                      get_codon_at get_seq_range get_seq_of_length
+                      gc_content_of_range )],
 
     constants => [qw( @START_CODONS @STOP_CODONS
                       $CODON_SIZE $SEQ_LENGTH $MIN_GENE_LENGTH
@@ -47,8 +49,9 @@ use vars qw(
 
 # Ref:
 # https://www.idtdna.com/pages/docs/educational-resources/mitochondrial-dna.pdf
-@START_CODONS    = qw( ATG ATA ATT );
-@STOP_CODONS     = qw( AGA AGG );
+#@START_CODONS    = qw( ATG ATA ATT );
+@START_CODONS    = qw( ATG ATA );
+@STOP_CODONS     = qw( AGA AGG TAG TAA );
 $INPUT_SEQ       = 'mtDNA_1-16569.fasta';
 $CODON_SIZE      = 3;
 $SEQ_LENGTH      = 0;      # updated by _read_fasta(), below
@@ -61,6 +64,7 @@ $MIN_GC_CONTENT  = 35;     # %GC (FIXME: allow as command-line option)
 #                           ===================
 sub read_fasta();
 sub _read_fasta( $ );
+sub complement_seq( $ );
 sub find_start_codons( $ );
 sub substring_match( $$$;$ );
 sub find_orfs( $$ );
@@ -104,6 +108,22 @@ sub _read_fasta( $ ) {
 } # read_fasta
 
 
+# Given an array of bases as input, return the complement strand as an array
+sub complement_seq( $ ) {
+    my $seq = shift;
+    my $cmp = [];
+
+    foreach my $b (@$seq) {
+    	# Watch out: the foreach loop index variable is an implicit alias for
+    	# the *actual* contents of LIST (see: perlsyn)
+        (my $c = $b ) =~ tr/ATCG/TAGC/;
+        push @$cmp, $c;
+    }
+
+    return $cmp;
+} # complement_seq
+
+
 # Given an array of bases as input, return a two-dimensional array where the
 # first dimension is reading frames of {0, 1, 2}-base offsets from the start of
 # the sequence and the second is a list of start codons matching any sequence
@@ -113,7 +133,6 @@ sub find_start_codons( $ ) {
     my ($pos, $codon);
     my $starts = [];
 
-    # FIXME: Also scan in reverse direction.
     for (my $frame = 0; $frame < $CODON_SIZE; $frame++) {
         #print "Reading frame $frame\n";
         #$starts->[$frame] = [];

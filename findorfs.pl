@@ -130,10 +130,15 @@ $begin+1, $end+1,   $length,  $gc,   $start,$stop, 1
         write;
     }
 
-    printf(<<FOOTER, $count);
+    printf(<<FOOTER, join(', ', @START_CODONS), join(', ', @STOP_CODONS), $count);
 
-    ------------------------
-     Total ORFS: %10d
+    Considering:
+    
+     Start codons :=  { %s }
+     Stop  codons :=  { %s }
+
+    ----------------------------------------------
+     Total ORFS:  %d
 
 FOOTER
 } # _report
