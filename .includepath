@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <includepath>
   <includepathentry path="${resource_loc:/CS7099-Lab01/lib}" />
+  <includepathentry path="/opt/local/lib/perl5/site_perl/5.12.4" />
 </includepath>
 

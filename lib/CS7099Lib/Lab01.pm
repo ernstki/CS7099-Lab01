@@ -100,7 +100,7 @@ sub find_start_codons( $ ) {
 
                 if ( substring_match($seq, $start, $pos) ) {
                     #print "FOUND\t$pos\t$codon\n";
-                    push $starts->[$frame], { $pos => $start };
+                    push @{$starts->[$frame]}, { $pos => $start };
                 }
 
             } # for each possible start codon in @START_CODONS
