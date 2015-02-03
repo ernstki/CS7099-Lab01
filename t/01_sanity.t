@@ -10,6 +10,6 @@ use lib catdir(@dotdot, 'lib' );
 use CS7099Lib::Lab01 qw( $INPUT_SEQ );
 
 subtest 'Required data files and libraries present?' => sub {
-	ok( -f catfile(@dotdot, $INPUT_SEQ), 'Input FASTA file present?' );
-	use_ok('CS7099Lib::Lab01');	
+    ok( -f catfile(@dotdot, $INPUT_SEQ), 'Input FASTA file present?' );
+    use_ok('CS7099Lib::Lab01');    
 };

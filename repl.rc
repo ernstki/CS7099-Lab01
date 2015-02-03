@@ -1,0 +1,8 @@
+use Data::Dump qw( pp dd );
+use lib './lib';
+use CS7099Lib::Lab01;
+
+use vars qw( $seq $starts );
+
+$seq = read_fasta();
+$starts = find_start_codons($seq);

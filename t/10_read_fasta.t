@@ -11,8 +11,8 @@ my $starts = {};
 
 subtest 'Check output of read_fasta()' => sub {
     ok( $seq = read_fasta(), 'Read in the FASTA file' );
-	ok( @$seq, 'Sequence came back with something' );
-	ok( scalar(@$seq) == $SEQ_LENGTH,
-		"Sequence has correct length ($SEQ_LENGTH)" );
+    ok( @$seq, 'Sequence came back with something' );
+    ok( scalar(@$seq) == $SEQ_LENGTH,
+        "Sequence has correct length ($SEQ_LENGTH)" );
 
 };

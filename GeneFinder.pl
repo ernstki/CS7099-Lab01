@@ -21,4 +21,10 @@ use CS7099Lib::Lab01;
 
 my $seq = read_fasta();
 my $starts = find_start_codons($seq);
-dd($starts);
+my $orfs = find_orfs($seq, $starts);
+
+#format REPORT =
+#@<<  @<<<<<<<  @<<<<<<<  @<<<
+#$fr, $start,   $stop,    $pctgc
+#.
+
