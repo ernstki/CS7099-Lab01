@@ -6,7 +6,7 @@ use Data::Dump qw( dd pp );
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use CS7099Lib::Lab01 qw(
-    &read_fasta &find_start_codons &substring_match
+    &read_seq &find_start_codons &substring_match
     @START_CODONS @STOP_CODONS
     $INPUT_SEQ $CODON_SIZE $SEQ_LENGTH
 );
@@ -16,7 +16,7 @@ my $starts = {};
 
 
 subtest 'Check output of find_start_codons()' => sub {
-    ok( $seq = read_fasta(), 'Read in the FASTA file' );
+    ok( $seq = read_seq(), 'Read in the FASTA file' );
     ok( $starts = find_start_codons($seq),
         "Call to find_start_codons() call doesn't fail" );
     cmp_ok( @$starts, '>', 0, 'Got something back (not an empty array)' );
@@ -53,3 +53,5 @@ subtest 'Check for duplicate positions in list of start codons' => sub {
 
     #} # for each reading frame
 };
+
+done_testing(2);

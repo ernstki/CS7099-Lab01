@@ -7,7 +7,7 @@ use FindBin;
 
 use lib "$FindBin::Bin/../lib";
 use CS7099Lib::Lab01 qw(
-    &read_fasta &find_start_codons &find_orfs
+    &read_seq &find_start_codons &find_orfs
     @START_CODONS @STOP_CODONS
     $INPUT_SEQ $CODON_SIZE $SEQ_LENGTH
 );
@@ -17,7 +17,7 @@ my $starts = {};
 my $orfs   = {};
 
 subtest 'Read in sequence file and find start codons' => sub {
-    ok( $seq = read_fasta(), 'Read in the FASTA file' );
+    ok( $seq = read_seq(), 'Read in the FASTA file' );
     ok( $starts = find_start_codons($seq),
         "Call to find_start_codons() call doesn't fail" );
 };
@@ -25,3 +25,5 @@ subtest 'Read in sequence file and find start codons' => sub {
 subtest 'Check output of find_orfs()' => sub {
     ok(0);
 };
+
+done_testing(2);

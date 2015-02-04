@@ -4,5 +4,5 @@ use CS7099Lib::Lab01;
 
 use vars qw( $seq $starts );
 
-$seq = read_fasta();
+$seq = read_seq();
 $starts = find_start_codons($seq);

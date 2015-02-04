@@ -19,8 +19,8 @@ use vars qw( @ISA %EXPORT_TAGS );
 @ISA = qw(Exporter);
 
 %EXPORT_TAGS = (
-    functions => [qw( read_fasta complement_seq find_start_codons find_orfs
-                      get_codon_at get_seq_range get_seq_of_length
+    functions => [qw( read_seq read_gene_list complement_seq find_start_codons
+                      find_orfs get_codon_at get_seq_range get_seq_of_length
                       gc_content_of_range )],
 
     constants => [qw( @START_CODONS @STOP_CODONS
@@ -39,8 +39,8 @@ use Data::Dump qw( dd dump );         # For debugging statements
 use English;                          # English names for magic variables
 
 use vars qw(
-    @START_CODONS @STOP_CODONS $INPUT_SEQ $CODON_SIZE $SEQ_LENGTH
-    $MIN_GENE_LENGTH $MIN_GC_CONTENT
+    @START_CODONS @STOP_CODONS $INPUT_SEQ $ENSEMBL_GENES $CODON_SIZE
+    $SEQ_LENGTH $MIN_GENE_LENGTH $MIN_GC_CONTENT
 ); 
 
 #
@@ -53,18 +53,21 @@ use vars qw(
 @START_CODONS    = qw( ATG ATA );
 @STOP_CODONS     = qw( AGA AGG TAG TAA );
 $INPUT_SEQ       = 'mtDNA_1-16569.fasta';
+$ENSEMBL_GENES   = 'protein-coding_mtDNA_GRCh38.fasta';
 $CODON_SIZE      = 3;
-$SEQ_LENGTH      = 0;      # updated by _read_fasta(), below
-$MIN_GENE_LENGTH = 60;     # FIXME: allow as command-line option
+$SEQ_LENGTH      = 0;      # updated by _read_seq(), below
+$MIN_GENE_LENGTH = 200;    # FIXME: allow as command-line option
 $MIN_GC_CONTENT  = 35;     # %GC (FIXME: allow as command-line option)
 
 
 #
 #                           P R O T O T Y P E S
 #                           ===================
-sub read_fasta();
-sub _read_fasta( $ );
+sub read_seq();
+sub _read_seq( $ );
 sub complement_seq( $ );
+sub read_gene_list();
+sub _read_fasta( $ );
 sub find_start_codons( $ );
 sub substring_match( $$$;$ );
 sub find_orfs( $$ );
@@ -79,19 +82,19 @@ sub gc_content_of_seq( $$$ );
 #                          S U B R O U T I N E S
 #                          =====================
 
-# Public (zero-argument) version of _read_fasta() which calls the "real"
+# Public (zero-argument) version of _read_seq() which calls the "real"
 # function with a hard-coded input filename.
-sub read_fasta() {
-    return _read_fasta($INPUT_SEQ);
+sub read_seq() {
+    return _read_seq($INPUT_SEQ);
 }
 
 
-# Private version of read_fasta() which actually reads the input FASTA file
+# Private version of read_seq() which actually reads the input FASTA file
 # and generates an array representing the input sequence, one base per
 # array element.
-sub _read_fasta( $ ) {
+sub _read_seq( $ ) {
     my $filename = shift;
-    my $seq = [];
+    my $seq      = [];
 
     open(FASTA, "<$filename") or die "Can't open $filename ($OS_ERROR)\n";
 
@@ -105,7 +108,7 @@ sub _read_fasta( $ ) {
     close FASTA;
     $SEQ_LENGTH = @$seq;
     return $seq;
-} # read_fasta
+} # read_seq
 
 
 # Given an array of bases as input, return the complement strand as an array
@@ -122,6 +125,46 @@ sub complement_seq( $ ) {
 
     return $cmp;
 } # complement_seq
+
+sub read_gene_list() {
+    return _read_fasta($ENSEMBL_GENES);	
+}
+
+sub _read_fasta( $ ) {
+	my $filename = shift;
+	my $genes      = [];
+	my $header   = '';
+	my ( $ensid, $begin, $end, $gene, $str );
+	
+	open(FASTA, "<$filename") or die "Can't open $filename ($OS_ERROR)\n";
+	
+	while (<FASTA>) {
+		if (/^>/) {
+            #chomp;
+			my $h = {};
+            ( $ensid, undef, $begin, $end, $gene, $str ) = split(/\|/, $_);
+            next if $str eq '-1'; # FIXME
+            $ensid =~ s/^>//;
+            $h = { 'ens_id' => $ensid,
+                   'begin'  => $begin,
+                   'end'    => $end,
+                   'gene'   => $gene,
+                   'strand' => $str,
+                 };
+            push @$genes, $h;
+            next;
+		} # else...
+		
+		# Absorb newlines and keep appending sequence lines to the last array
+		# element's 'seq' key:
+        s/\r?\n?//g;		
+        next if /^$/;
+		$genes->[$#$genes]->{seq} .= $_;
+	} # for each line in the input FASTA
+	
+	close FASTA;
+	return [ sort { $a->{begin} <=> $b->{begin} } @$genes ];
+} # _read_fasta
 
 
 # Given an array of bases as input, return a two-dimensional array where the

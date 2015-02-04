@@ -54,10 +54,11 @@ GetOptions(
 #                       M A K E   I T   H A P P E N
 #                       ===========================
 
-use vars qw ( $seq $orfs );
-my $seq = read_fasta();
+use vars qw ( $seq $orfs $genes );
+my $seq    = read_seq();
 my $starts = find_start_codons($seq);
-my $orfs = find_orfs($seq, $starts);
+my $orfs   = find_orfs($seq, $starts);
+my $genes  = read_gene_list();
 
 SWITCH: {
     #codons_at_positions($codons_at)       and last SWITCH if @codons_at;
@@ -83,7 +84,7 @@ sub sequences_of_length( $$ ) { } # sequence_of_length
 # Create a formatted report of the open reading frames found in the target
 # genome, suitable for printing (pages separated with linefeeds)
 sub print_report() {
-    # TODO: Send to system default printer or create a PDF with GS
+    # TODO Send to system default printer or create a PDF with GS
     $FORMAT_LINES_PER_PAGE = 58;
     _report();
 }
@@ -99,21 +100,23 @@ sub display_report() {
 
 # Internal function that does the actual work of making the report, using
 # Perl formats (see 'perldoc perlform')
+#
+# TODO Allow sorting by Length, %GC Content, and Matches
 sub _report() {
 
-    my ($begin, $end, $length, $gc, $start, $stop);
+    my ($begin, $end, $length, $gc, $start, $stop, $gene, $match);
 
     format STDOUT_TOP =
 Open Reading Frames in Human GRCh38 mtDNA Genome (@-based indices)
                                                   $zero_base?0:1
 
-                                     Start  Stop
-Begin     End       Length    %GC    Codon  Codon  Strand
---------  --------  --------  ----   -----  -----  ------
+                                     Start  Stop                     Exact
+Begin     End       Length    %GC    Codon  Codon  Strand      Gene  Match
+--------  --------  --------  ----   -----  -----  ------  --------  -----
 .
     format STDOUT =
-@<<<<<<<  @<<<<<<<  @<<<<<<<  @#.#   @||||  @||||  @|||||
-$begin+1, $end+1,   $length,  $gc,   $start,$stop, 1
+@<<<<<<<  @<<<<<<<  @<<<<<<<  @#.#   @||||  @||||  @|||||  @>>>>>>>  @||||
+$begin+1, $end+1,   $length,  $gc,   $start,$stop, 1,      $gene,    $match
 .
 
     my $count = 0;
@@ -126,6 +129,18 @@ $begin+1, $end+1,   $length,  $gc,   $start,$stop, 1
         next if $gc < $MIN_GC_CONTENT;
         $start  = get_codon_at($seq, $begin);
         $stop   = get_codon_at($seq, $end - $CODON_SIZE + 1);
+        
+        # See if the position of the start codon coincides with one of the
+        # protein-coding genes from the ENSEMBL data. (k *= 13; sigh.)
+        $gene = $match = '';
+        foreach my $g (@$genes) {
+        	# Since the ENSEMBL data is 1-indexed:
+        	if ( $g->{begin} == $orf + 1 ) {
+				$gene  = $g->{gene};
+	        	$match = '*' if ( $g->{end} == $orf + 1 + $length );
+        	}
+        } # for each gene in the ENSEMBL list of protein-coding genes
+
         $count++;
         write;
     }
