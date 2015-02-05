@@ -65,7 +65,7 @@ SWITCH: {
     #sequences_by_range($seqs_by_ranges)   and last SWITCH if $seqs_by_ranges;
     #sequences_of_length($seqs_by_lengths) and last SWITCH if $seqs_by_lengths;
     print_report()                      and last SWITCH if $print_report;
-   
+
     # else:
     display_report();
 }
@@ -93,8 +93,8 @@ sub print_report() {
 # Display a formatted report of the open reading frames found in the target
 # genome, suitable for display on screen (no linefeeds)
 sub display_report() {
-	$FORMAT_FORMFEED = "\n\n";
-	_report();
+    $FORMAT_FORMFEED = "\n\n";
+    _report();
 }
 
 
@@ -129,16 +129,16 @@ $begin+1, $end+1,   $length,  $gc,   $start,$stop, 1,      $gene,    $match
         next if $gc < $MIN_GC_CONTENT;
         $start  = get_codon_at($seq, $begin);
         $stop   = get_codon_at($seq, $end - $CODON_SIZE + 1);
-        
+
         # See if the position of the start codon coincides with one of the
         # protein-coding genes from the ENSEMBL data. (k *= 13; sigh.)
         $gene = $match = '';
         foreach my $g (@$genes) {
-        	# Since the ENSEMBL data is 1-indexed:
-        	if ( $g->{begin} == $orf + 1 ) {
-				$gene  = $g->{gene};
-	        	$match = '*' if ( $g->{end} == $orf + 1 + $length );
-        	}
+            # Since the ENSEMBL data is 1-indexed:
+            if ( $g->{begin} == $orf + 1 ) {
+                $gene  = $g->{gene};
+                $match = '*' if ( $g->{end} == $orf + 1 + $length );
+            }
         } # for each gene in the ENSEMBL list of protein-coding genes
 
         $count++;
@@ -148,7 +148,7 @@ $begin+1, $end+1,   $length,  $gc,   $start,$stop, 1,      $gene,    $match
     printf(<<FOOTER, join(', ', @START_CODONS), join(', ', @STOP_CODONS), $count);
 
     Considering:
-    
+
      Start codons :=  { %s }
      Stop  codons :=  { %s }
 

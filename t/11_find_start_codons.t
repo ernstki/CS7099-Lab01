@@ -54,4 +54,4 @@ subtest 'Check for duplicate positions in list of start codons' => sub {
     #} # for each reading frame
 };
 
-done_testing(2);
+#done_testing(2);

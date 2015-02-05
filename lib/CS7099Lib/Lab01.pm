@@ -26,9 +26,9 @@ use vars qw( @ISA %EXPORT_TAGS );
     constants => [qw( @START_CODONS @STOP_CODONS
                       $CODON_SIZE $SEQ_LENGTH $MIN_GENE_LENGTH
                       $MIN_GC_CONTENT )],
-                      
-    internals => [qw( $INPUT_SEQ substring_match find_longest_orf
-                      gc_content_of_seq )],
+
+    internals => [qw( $INPUT_SEQ $ENSEMBL_GENES substring_match
+                      find_longest_orf gc_content_of_seq )],
 );
 
 Exporter::export_tags('functions');
@@ -117,8 +117,8 @@ sub complement_seq( $ ) {
     my $cmp = [];
 
     foreach my $b (@$seq) {
-    	# Watch out: the foreach loop index variable is an implicit alias for
-    	# the *actual* contents of LIST (see: perlsyn)
+        # Watch out: the foreach loop index variable is an implicit alias for
+        # the *actual* contents of LIST (see: perlsyn)
         (my $c = $b ) =~ tr/ATCG/TAGC/;
         push @$cmp, $c;
     }
@@ -126,22 +126,30 @@ sub complement_seq( $ ) {
     return $cmp;
 } # complement_seq
 
+
+# Read a list of known protein-coding genes for human mitochondrial DNS
+# (acquired from ENSEMBL's BioMart). Calls a generic FASTA reading function
+# and returns the results as an array refrence.
 sub read_gene_list() {
-    return _read_fasta($ENSEMBL_GENES);	
+    return _read_fasta($ENSEMBL_GENES);    
 }
 
+
+# Read in a FASTA file supplied as $filename and return an array reference,
+# one element per sequence, with the header properties in hash keys (and the
+# actual sequence in the $arrayref->[index]->{seq} hash key).
 sub _read_fasta( $ ) {
-	my $filename = shift;
-	my $genes      = [];
-	my $header   = '';
-	my ( $ensid, $begin, $end, $gene, $str );
-	
-	open(FASTA, "<$filename") or die "Can't open $filename ($OS_ERROR)\n";
-	
-	while (<FASTA>) {
-		if (/^>/) {
+    my $filename = shift;
+    my $genes      = [];
+    my $header   = '';
+    my ( $ensid, $begin, $end, $gene, $str );
+
+    open(FASTA, "<$filename") or die "Can't open $filename ($OS_ERROR)\n";
+
+    while (<FASTA>) {
+        if (/^>/) {
             #chomp;
-			my $h = {};
+            my $h = {};
             ( $ensid, undef, $begin, $end, $gene, $str ) = split(/\|/, $_);
             next if $str eq '-1'; # FIXME
             $ensid =~ s/^>//;
@@ -153,24 +161,23 @@ sub _read_fasta( $ ) {
                  };
             push @$genes, $h;
             next;
-		} # else...
-		
-		# Absorb newlines and keep appending sequence lines to the last array
-		# element's 'seq' key:
-        s/\r?\n?//g;		
+        } # else...
+
+        # Absorb newlines and keep appending sequence lines to the last array
+        # element's 'seq' key:
+        s/\r?\n?//g;        
         next if /^$/;
-		$genes->[$#$genes]->{seq} .= $_;
-	} # for each line in the input FASTA
-	
-	close FASTA;
-	return [ sort { $a->{begin} <=> $b->{begin} } @$genes ];
+        $genes->[$#$genes]->{seq} .= $_;
+    } # for each line in the input FASTA
+
+    close FASTA;
+    return [ sort { $a->{begin} <=> $b->{begin} } @$genes ];
 } # _read_fasta
 
 
-# Given an array of bases as input, return a two-dimensional array where the
-# first dimension is reading frames of {0, 1, 2}-base offsets from the start of
-# the sequence and the second is a list of start codons matching any sequence
-# in @START_CODONS for that reading frame.
+# Given an array (reference) of bases as input, return a list (array ref) of
+# start codons matching any sequence in @START_CODONS, for each reading frame
+# (offsets of 0, 1, or 2 from the start of the sequence).
 sub find_start_codons( $ ) {
     my $seq = shift;
     my ($pos, $codon);
@@ -210,10 +217,10 @@ sub find_start_codons( $ ) {
 } # find_start_codons
 
 
-# Given a two-dimensional array of start codons by reading frame {0, 1, 2},
-# return an array of hashes where the keys are the start posistions and the
-# values are the lengths of the longest open reading frame (or undef if one
-# can't be found before the end of the sequence).
+# Given an array (reference) of start codons return an array of hashes where
+# the keys are the start posistions and the values are the lengths of the
+# longest open reading frame (or undef if one can't be found before the end of
+# the sequence).
 sub find_orfs( $$ ) {
     my ( $seq, $starts ) = @_;
 

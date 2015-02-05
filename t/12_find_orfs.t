@@ -26,4 +26,4 @@ subtest 'Check output of find_orfs()' => sub {
     ok(0);
 };
 
-done_testing(2);
+#done_testing(2);
