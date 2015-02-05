@@ -11,7 +11,7 @@
 use strict;
 use warnings;
 use autodie;
-use Carp;                             # Warnings with (better) line numbers
+#use Carp;                             # Warnings with (better) line numbers
 #use Data::Dump qw( dd dump );         # For debugging statements
 use English;                          # English names for magic variables
 use FindBin;                          # Find where this script is

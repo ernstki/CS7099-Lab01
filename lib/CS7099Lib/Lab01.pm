@@ -10,7 +10,6 @@
 use strict;
 use warnings;
 use autodie;
-use Data::Dump qw( dd pp );
 
 package CS7099Lib::Lab01;
 require Exporter;
@@ -34,8 +33,8 @@ use vars qw( @ISA %EXPORT_TAGS );
 Exporter::export_tags('functions');
 Exporter::export_ok_tags('constants', 'internals');
 
-use Carp;
-use Data::Dump qw( dd dump );         # For debugging statements
+#use Carp;
+#use Data::Dump qw( dd dump );         # For debugging statements
 use English;                          # English names for magic variables
 
 use vars qw(
@@ -281,7 +280,7 @@ sub get_seq_range( $$$;$ ) {
     my ( $seq, $start, $end, $pretty ) = @_;
     my $ret = '';
 
-    carp "Warning: Range not an even multiple of codon size"
+    warn "Warning: Range not an even multiple of codon size"
        unless ( ($end - $start + 1) % $CODON_SIZE == 0 );
 
     for (my $pos = $start; $pos < $end; $pos += $CODON_SIZE ) {
@@ -299,7 +298,7 @@ sub get_seq_range( $$$;$ ) {
 sub get_seq_of_length( $$$;$ ) {
     my ( $seq, $start, $length, $pretty ) = @_;
 
-    carp "Warning: Length not an even multiple of codon size"
+    warn "Warning: Length not an even multiple of codon size"
        unless ( $length % $CODON_SIZE == 0 );
 
     return get_seq_range($seq, $start, $start+$length-1);
@@ -325,7 +324,7 @@ sub gc_content_of_range( $$$ ) {
     my ($seq, $start, $end) = @_;
     my $gs_or_cs = 0;
 
-    carp "Warning: Range not an even multiple of codon size"
+    warn "Warning: Range not an even multiple of codon size"
        unless ( ($end - $start + 1) % $CODON_SIZE == 0 );
 
     for (my $pos = $start; $pos < $end + 1; $pos++) {
@@ -342,7 +341,7 @@ sub gc_content_of_range( $$$ ) {
 
 # Source: http://perldoc.perl.org/perlform.html#Accessing-Formatting-Internals
 sub swrite( $@ ) {
-    croak "usage: swrite PICTURE ARGS" unless @_;
+    die "usage: swrite PICTURE ARGS" unless @_;
     my $format = shift;
     $^A = "";
     formline($format,@_);
